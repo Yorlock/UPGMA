@@ -6,7 +6,20 @@ import matplotlib.pyplot as plt
 
 G = nx.Graph()
 global numberOfClusters
+global showDataBool
+global showMatrixBool
 arrIndex = []
+
+class Value:
+    def __init__(self, value, sum = 0, number = 1):
+        self.value = value
+        self.sum = value
+        self.number = number
+
+    def updateData(self, value, sum, number):
+        self.value = value
+        self.sum = sum
+        self.number = number
 
 def fromInput():
     data = []
@@ -21,7 +34,7 @@ def fromInput():
     except:
         print("Error")
         quit()
-    return np.array(data)
+    return dataToClass(np.array(data))
 
 def fromFile(path):
     try:
@@ -41,7 +54,17 @@ def fromFile(path):
     except:
         print("Error")
         quit()
-    return np.array(data)
+    return dataToClass(np.array(data))
+
+def dataToClass(data):
+    dataClass = []
+    for i in range(0, len(data)):
+        helper = []
+        for j in range(0, len(data)):
+            helper.append(Value(data[i][j]))
+        dataClass.append(helper)
+    return dataClass
+
 
 def get_edge_attributes(G, name):
     edges = G.edges(data=True)
@@ -53,11 +76,21 @@ def findMinValue(data):
     jIndex = 0
     for i in range(0, len(data)):
         for j in range(i + 1, len(data)):
-            if minValue > data[i][j]:
-                minValue = data[i][j]
+            if minValue > data[i][j].value:
+                minValue = data[i][j].value
                 iIndex = i
                 jIndex = j
     return minValue, iIndex, jIndex
+
+def showMatrix(data):
+    if not showMatrixBool:
+        return
+    for i in range(0, len(data)):
+        row = []
+        for j in range(0, len(data)):
+            row.append(data[i][j].value)
+        print(row)
+    print()
 
 def updateMatrix(data, mergeIndex1, mergeIndex2, newCluster):
     newIndex = 0
@@ -73,16 +106,18 @@ def updateMatrix(data, mergeIndex1, mergeIndex2, newCluster):
         data = np.delete(data, mergeIndex2, axis=0)
         data = np.delete(data, mergeIndex2, axis=1)
         newIndex = mergeIndex1
+    for i in range(len(data[0])):
+        data[i, newIndex].updateData(1.0*(arr[i].sum + data[i][newIndex].sum)/(arr[i].number + data[i][newIndex].number), arr[i].sum + data[i][newIndex].sum, arr[i].number + data[i][newIndex].number)
+        data[newIndex, i].updateData(data[i][newIndex].value, data[i][newIndex].sum, data[i][newIndex].number)
+    data[newIndex, newIndex].updateData(0.0, 0.0, 0)
+    showMatrix(data)
     arrIndex.pop(mergeIndex2)
     arrIndex.pop(mergeIndex1)
     arrIndex.insert(newIndex, newCluster)
-    for i in range(len(data[0])):
-        data[i, newIndex] = ((arr[i]) + (data[i][newIndex]))/2.0
-        data[newIndex, i] = data[i][newIndex]
-    data[newIndex, newIndex] = 0.0
     return data, newIndex
 
 def algorithm(data):
+    showMatrix(data)
     numberOfClusters = 0
     for i in range(len(data[0])):
         newLeaf = "L"+str(i)
@@ -99,6 +134,8 @@ def algorithm(data):
     return data
 
 if __name__=='__main__':
+    showMatrixBool = True
+    showDataBool = True
     #data = fromInput()
     data = fromFile(fr"input\test3.txt")
     algorithm(data)
@@ -106,6 +143,7 @@ if __name__=='__main__':
     edge_labels=dict([((u,v,),d['weight'])
                  for u,v,d in G.edges(data=True)])
     nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
+    if showDataBool:
+        print("Nodes:",G.nodes)
+        print("Edges with weights:", get_edge_attributes(G, "weight"))
     nx.draw(G, pos, node_size=500,edge_cmap=plt.cm.Reds,with_labels=True)
-    print("Nodes:",G.nodes)
-    print("Edges with weights:", get_edge_attributes(G, "weight"))
