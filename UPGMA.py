@@ -137,7 +137,7 @@ if __name__=='__main__':
     showMatrixBool = True
     showDataBool = True
     #data = fromInput()
-    data = fromFile(fr"input\test3.txt")
+    data = fromFile(fr"input\test5.txt")
     algorithm(data)
     pos = nx.spring_layout(G, k=2.15, iterations=20)
     edge_labels=dict([((u,v,),d['weight'])
